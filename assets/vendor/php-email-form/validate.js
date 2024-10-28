@@ -91,15 +91,15 @@
     .then(data => {
         form.querySelector('.loading').classList.remove('d-block');
         if (data.error) {
-            displayError(form, data.details || 'An error occurred while sending your message.');
+            // displayError(form, data.details || 'An error occurred while sending your message.');
         } else {
             displaySuccessMessage(form, 'Your message has been sent successfully!');
             form.reset(); // Reset the form after success
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        displayError(form, 'There was a problem sending your message. Please try again later.');
+        // console.error('Error:', error);
+        // displayError(form, 'There was a problem sending your message. Please try again later.');
     });
 }
 
