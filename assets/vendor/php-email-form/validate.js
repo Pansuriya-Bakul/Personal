@@ -65,35 +65,44 @@
       return re.test(String(email).toLowerCase());
   }
 
-  function submitForm(form, action, jsonData) {
-      fetch(action, {
-          method: 'POST',
-          body: JSON.stringify(jsonData), // Send JSON data
-          headers: {
-              'Content-Type': 'application/json', // Set content type to JSON
-              'Accept': 'application/json' // Specify the expected response format
-          }
-      })
-      .then(response => {
-          if (!response.ok) {
-              throw new Error('Network response was not ok: ' + response.statusText);
-          }
-          return response.json();
-      })
-      .then(data => {
-          form.querySelector('.loading').classList.remove('d-block');
-          if (data.error) {
-              displayError(form, data.details || 'An error occurred while sending your message.');
-          } else {
-              displaySuccessMessage(form, 'Your message has been sent successfully!');
-              form.reset(); // Reset the form after success
-          }
-      })
-      .catch(error => {
-          console.error('Error:', error);
-          displayError(form, 'There was a problem sending your message. Please try again later.');
-      });
-  }
+  function submitForm(form, action) {
+    // Prepare JSON object from form data
+    const formData = {
+        name: form.querySelector('input[name="name"]').value,
+        email: form.querySelector('input[name="email"]').value,
+        subject: form.querySelector('input[name="subject"]').value,
+        message: form.querySelector('textarea[name="message"]').value
+    };
+
+    fetch(action, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json', // Set content type to JSON
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(formData) // Convert formData to JSON string
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        form.querySelector('.loading').classList.remove('d-block');
+        if (data.error) {
+            displayError(form, data.details || 'An error occurred while sending your message.');
+        } else {
+            displaySuccessMessage(form, 'Your message has been sent successfully!');
+            form.reset(); // Reset the form after success
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        displayError(form, 'There was a problem sending your message. Please try again later.');
+    });
+}
+
 
   function displaySuccessMessage(form, message) {
       let successMessage = form.querySelector('.sent-message');
