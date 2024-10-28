@@ -1,95 +1,107 @@
 (function () {
   "use strict";
 
-  // Select all forms with the class 'php-email-form'
   let forms = document.querySelectorAll('.php-email-form');
 
   forms.forEach(function (form) {
-    form.addEventListener('submit', function (event) {
-      event.preventDefault(); // Prevent the default form submission
+      form.addEventListener('submit', function (event) {
+          event.preventDefault(); // Prevent default form submission
 
-      let action = form.getAttribute('action');
+          let action = form.getAttribute('action');
 
-      // Validate the form inputs
-      let name = form.querySelector('input[name="name"]');
-      let email = form.querySelector('input[name="email"]');
-      let subject = form.querySelector('input[name="subject"]');
-      let message = form.querySelector('textarea[name="message"]');
+          // Validate the form inputs
+          let name = form.querySelector('input[name="name"]');
+          let email = form.querySelector('input[name="email"]');
+          let subject = form.querySelector('input[name="subject"]');
+          let message = form.querySelector('textarea[name="message"]');
 
-      // Clear previous error messages
-      clearErrorMessages(form);
+          // Clear previous error messages
+          clearErrorMessages(form);
 
-      // Check if all fields are filled
-      if (!name.value || !email.value || !subject.value || !message.value) {
-        displayError(form, 'All fields are required!');
-        return;
-      }
+          // Check if all fields are filled
+          if (!name.value || !email.value || !subject.value || !message.value) {
+              displayError(form, 'All fields are required!');
+              return;
+          }
 
-      // Check if email is valid
-      if (!validateEmail(email.value)) {
-        displayError(form, 'Please enter a valid email address!');
-        return;
-      }
+          // Check if email is valid
+          if (!validateEmail(email.value)) {
+              displayError(form, 'Please enter a valid email address!');
+              return;
+          }
 
-      // Proceed with form submission if validation passes
-      let formData = new FormData(form);
-      submitForm(form, action, formData);
-    });
+          // Display loading and hide error/success messages
+          form.querySelector('.loading').classList.add('d-block');
+          form.querySelector('.error-message').classList.remove('d-block');
+          form.querySelector('.sent-message').classList.remove('d-block');
+
+          // Create JSON object from form data
+          const jsonData = {
+              name: name.value,
+              email: email.value,
+              subject: subject.value,
+              message: message.value
+          };
+
+          // Submit the form
+          submitForm(form, action, jsonData);
+      });
   });
 
   function displayError(form, message) {
-    let errorMessage = form.querySelector('.error-message');
-    errorMessage.innerHTML = message;
-    errorMessage.classList.add('d-block');
+      let errorMessage = form.querySelector('.error-message');
+      errorMessage.innerHTML = message;
+      errorMessage.classList.add('d-block');
   }
 
   function clearErrorMessages(form) {
-    let errorMessage = form.querySelector('.error-message');
-    errorMessage.innerHTML = '';
-    errorMessage.classList.remove('d-block');
+      let errorMessage = form.querySelector('.error-message');
+      errorMessage.innerHTML = '';
+      errorMessage.classList.remove('d-block');
   }
 
   function validateEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Simple email regex
-    return re.test(String(email).toLowerCase());
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Simple email regex
+      return re.test(String(email).toLowerCase());
   }
 
-  function submitForm(form, action, formData) {
-    // Send the form data to the specified action URL using the Fetch API
-    fetch(action, {
-      method: 'POST', // Specify the HTTP method
-      body: formData, // The form data to send
-      headers: {
-        'Accept': 'application/json' // Specify the expected response format
-      }
-    })
+  function submitForm(form, action, jsonData) {
+      fetch(action, {
+          method: 'POST',
+          body: JSON.stringify(jsonData), // Send JSON data
+          headers: {
+              'Content-Type': 'application/json', // Set content type to JSON
+              'Accept': 'application/json' // Specify the expected response format
+          }
+      })
       .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok: ' + response.statusText);
-        }
-        return response.json(); // Parse the JSON response
+          if (!response.ok) {
+              throw new Error('Network response was not ok: ' + response.statusText);
+          }
+          return response.json();
       })
       .then(data => {
-        console.log('Success:', data);
-        // Optionally, display a success message to the user
-        // Example: displaySuccessMessage(form, 'Your message has been sent successfully!');
+          form.querySelector('.loading').classList.remove('d-block');
+          if (data.error) {
+              displayError(form, data.details || 'An error occurred while sending your message.');
+          } else {
+              displaySuccessMessage(form, 'Your message has been sent successfully!');
+              form.reset(); // Reset the form after success
+          }
       })
       .catch(error => {
-        console.error('Error:', error);
-        // Optionally, display an error message to the user
-        displayError(form, 'There was a problem sending your message. Please try again later.');
+          console.error('Error:', error);
+          displayError(form, 'There was a problem sending your message. Please try again later.');
       });
   }
 
-  // Optionally, create a function to display success messages
   function displaySuccessMessage(form, message) {
-    let successMessage = form.querySelector('.success-message');
-    successMessage.innerHTML = message;
-    successMessage.classList.add('d-block');
-    setTimeout(() => {
-      successMessage.innerHTML = ''; // Clear the message after a few seconds
-      successMessage.classList.remove('d-block');
-    }, 5000);
+      let successMessage = form.querySelector('.sent-message');
+      successMessage.innerHTML = message;
+      successMessage.classList.add('d-block');
+      setTimeout(() => {
+          successMessage.innerHTML = ''; // Clear the message after a few seconds
+          successMessage.classList.remove('d-block');
+      }, 5000);
   }
-
 })();
