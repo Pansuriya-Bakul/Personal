@@ -1,58 +1,59 @@
-// Select the form element
-const form = document.querySelector(".php-email-form");
-const loadingElement = document.querySelector(".loading");
-const errorMessageElement = document.querySelector(".error-message");
-const sentMessageElement = document.querySelector(".sent-message");
+(function () {
+    "use strict";
 
-// Add an event listener for form submission
-form.addEventListener("submit", async (event) => {
-    event.preventDefault(); // Prevent the default form submission
+    let forms = document.querySelectorAll('.php-email-form');
 
-    // Show the loading message and hide any previous messages
-    loadingElement.style.display = "block";
-    errorMessageElement.style.display = "none";
-    sentMessageElement.style.display = "none";
+    forms.forEach(function (e) {
+        e.addEventListener('submit', function (event) {
+            event.preventDefault();
 
-    // Collect form data
-    const name = form.name.value;
-    const email = form.email.value;
-    const subject = form.subject.value;
-    const message = form.message.value;
+            let thisForm = this;
+            let action = thisForm.getAttribute('action');
 
-    // API Gateway endpoint URL
-    const apiUrl = "https://72x08dctrd.execute-api.us-east-2.amazonaws.com/prod/ContactInformation/"; // Replace with your actual endpoint
+            if (!action) {
+                displayError(thisForm, 'The form action property is not set!');
+                return;
+            }
 
-    // Set up the request payload
-    const payload = {
-        name: name,
-        email: email,
-        subject: subject,
-        message: message
-    };
+            // Display loading and hide error/success messages
+            thisForm.querySelector('.loading').classList.add('d-block');
+            thisForm.querySelector('.error-message').classList.remove('d-block');
+            thisForm.querySelector('.sent-message').classList.remove('d-block');
 
-    try {
-        // Send POST request to API Gateway
-        const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
+            let formData = new FormData(thisForm);
+
+            php_email_form_submit(thisForm, action, formData);
         });
+    });
 
-        // Check if the request was successful
-        if (response.ok) {
-            // Show the success message, hide the loading spinner, and reset the form
-            loadingElement.style.display = "none";
-            sentMessageElement.style.display = "block";
-            form.reset(); // Clear the form
-        } else {
-            throw new Error("Failed to send message. Please try again later.");
-        }
-    } catch (error) {
-        // Show the error message and hide the loading spinner
-        loadingElement.style.display = "none";
-        errorMessageElement.style.display = "block";
-        errorMessageElement.textContent = error.message;
+    function php_email_form_submit(thisForm, action, formData) {
+        fetch(action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            thisForm.querySelector('.loading').classList.remove('d-block');
+            if (data && data.success) {
+                thisForm.querySelector('.sent-message').classList.add('d-block');
+                thisForm.reset();
+            } else {
+                displayError(thisForm, data.message || 'An error occurred while sending your message.');
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            displayError(thisForm, 'An error occurred while sending your message. Please try again later.');
+        });
     }
-});
+
+    function displayError(thisForm, message) {
+        thisForm.querySelector('.error-message').textContent = message;
+        thisForm.querySelector('.error-message').classList.add('d-block');
+    }
+})();
